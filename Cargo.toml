@@ -1,7 +1,7 @@
 [package]
 name = "isolanguage-1"
 description = "ISO 639-1 library with optional Serde support"
-keywords = ["ISO 639-1", "languages"]
+keywords = ["ISO", "639-1", "languages"]
 categories = ["data-structures", "internationalization"]
 license = "MIT OR Apache-2.0"
 version = "0.1.0"
