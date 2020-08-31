@@ -3,7 +3,7 @@
 //! The main type is the `LanguageCode` type, which is an enum for every single country in ISO
 //! 639-1. It optionally implements Serialize and Deserialize too.
 
-#[cfg(feature = "serde_support")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
@@ -16,11 +16,11 @@ macro_rules! languages_table {
     ) => {
         /// An enumeration of all ISO 639-1 language codes.
         #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
         pub enum $enum_name {
             $(
                 #[doc=$name]
-                #[cfg_attr(feature = "serde_support", serde(rename=$code))]
+                #[cfg_attr(feature = "serde", serde(rename=$code))]
                 $variant,
             )+
         }
