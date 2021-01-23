@@ -1,13 +1,19 @@
-//! The [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) spec implemented.
+//! This crate implements the [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) standard in Rust.
+//! It also has optional Serde support, by using the `serde` feature:
+//!
+//! ```toml
+//! isolanguage-1 = { version = "0.2.1", features = ["serde"] }
+//! ```
 //!
 //! The main type is the `LanguageCode` type, which is an enum for every single country in ISO
 //! 639-1. It optionally implements Serialize and Deserialize too.
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 macro_rules! languages_table {
     (
@@ -27,31 +33,81 @@ macro_rules! languages_table {
 
         impl $enum_name {
             /// Returns the 2 letter code of the language.
-            pub fn code(self) -> &'static str {
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use isolanguage_1::LanguageCode;
+            ///
+            /// assert_eq!(LanguageCode::Vi.code(), "vi");
+            /// ```
+            #[must_use]
+            pub const fn code(self) -> &'static str {
                 match self {
                     $(Self::$variant => $code,)+
                 }
             }
+
             /// Returns the 3 letter ISO 639-2 T code of the language (preferred over the B code).
-            pub fn code_t(self) -> &'static str {
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use isolanguage_1::LanguageCode;
+            ///
+            /// assert_eq!(LanguageCode::Nl.code_t(), "nld");
+            /// ```
+            #[must_use]
+            pub const fn code_t(self) -> &'static str {
                 match self {
                     $(Self::$variant => $code_t,)+
                 }
             }
+
             /// Returns the 3 letter ISO 639-2 B code of the language (the T code is preferred).
-            pub fn code_b(self) -> &'static str {
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use isolanguage_1::LanguageCode;
+            ///
+            /// assert_eq!(LanguageCode::Nl.code_b(), "dut");
+            /// ```
+            #[must_use]
+            pub const fn code_b(self) -> &'static str {
                 match self {
                     $(Self::$variant => $code_b,)+
                 }
             }
+
             /// Returns the ISO language name.
-            pub fn name(self) -> &'static str {
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use isolanguage_1::LanguageCode;
+            ///
+            /// assert_eq!(LanguageCode::Cs.name(), "Czech");
+            /// ```
+            #[must_use]
+            pub const fn name(self) -> &'static str {
                 match self {
                     $(Self::$variant => $name,)+
                 }
             }
+
             /// Returns the ISO family of the language.
-            pub fn family(self) -> &'static str {
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use isolanguage_1::LanguageCode;
+            ///
+            /// assert_eq!(LanguageCode::Kk.family(), "Turkic");
+            /// assert_eq!(LanguageCode::Vo.family(), "Constructed");
+            /// ```
+            #[must_use]
+            pub const fn family(self) -> &'static str {
                 match self {
                     $(Self::$variant => $family,)+
                 }
@@ -66,7 +122,7 @@ macro_rules! languages_table {
                 match s {
                     $($code => Ok(Self::$variant),)+
                     _ => Err($enum_err_name {
-                        language: String::from(s),
+                        language: s.to_owned(),
                     }),
                 }
             }
@@ -88,14 +144,16 @@ macro_rules! languages_table {
             }
         }
 
+        /// An error parsing a language from its two letter language code.
         #[derive(Debug, Clone)]
         pub struct $enum_err_name {
+            /// The language that could not be parsed.
             pub language: String,
         }
 
         impl Display for $enum_err_name {
             fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-                write!(f, "{} is not a valid ISO 639-1 2 letter language code.", self.language)
+                write!(f, "{} is not a valid ISO 639-1 2 letter language code", self.language)
             }
         }
     }

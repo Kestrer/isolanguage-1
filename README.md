@@ -1,10 +1,13 @@
-# Isolanguage-1
+# isolanguage-1
 
-This crate implements the [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) standard in Rust. It
-also has optional Serde support, by using the `serde` feature:
+This crate implements the [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1) standard in Rust.
+It also has optional Serde support, by using the `serde` feature:
 
+```toml
+isolanguage-1 = { version = "0.2.1", features = ["serde"] }
 ```
-isolanguage-1 = { version = "0.2.0", features = ["serde"] }
-```
 
-It only has one type, the `LanguageCode` enum which contains every single ISO 639-1 language.
+The main type is the `LanguageCode` type, which is an enum for every single country in ISO
+639-1. It optionally implements Serialize and Deserialize too.
+
+License: MIT OR Apache-2.0
