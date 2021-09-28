@@ -15,6 +15,9 @@ use std::str::FromStr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "iterable")]
+use strum_macros::{EnumCount, EnumIter};
+
 macro_rules! languages_table {
     (
         $enum_name:ident, $enum_err_name:ident,
@@ -23,6 +26,7 @@ macro_rules! languages_table {
         /// An enumeration of all ISO 639-1 language codes.
         #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        #[cfg_attr(feature = "iterable", derive(EnumCount, EnumIter))]
         pub enum $enum_name {
             $(
                 #[doc=$name]
@@ -154,6 +158,27 @@ macro_rules! languages_table {
         impl Display for $enum_err_name {
             fn fmt(&self, f: &mut Formatter) -> fmt::Result {
                 write!(f, "{} is not a valid ISO 639-1 2 letter language code", self.language)
+            }
+        }
+
+        #[cfg(feature = "iterable")]
+        impl LanguageCode {
+            pub fn codes() -> impl Iterator<Item = &'static str> {
+                use strum::IntoEnumIterator;
+                Self::iter().map(|variant| variant.code())
+            }
+            pub fn codes_t() -> impl Iterator<Item = &'static str> {
+                use strum::IntoEnumIterator;
+                Self::iter().map(|variant| variant.code_t())
+            }
+            pub fn codes_b() -> impl Iterator<Item = &'static str> {
+                use strum::IntoEnumIterator;
+                Self::iter().map(|variant| variant.code_b())
+            }
+            pub fn families() -> impl Iterator<Item = &'static str> {
+              use strum::IntoEnumIterator;
+              use itertools::Itertools;
+              Self::iter().map(|variant| variant.family()).sorted().dedup()
             }
         }
     }
