@@ -421,4 +421,30 @@ mod tests {
         assert_eq!(LanguageCode::Zh.to_string(), "Chinese");
         assert_eq!(LanguageCode::Sg.to_string(), "Sango");
     }
+
+    #[cfg(feature = "iterable")]
+    #[test]
+    fn iterable() {
+        use strum::EnumCount;
+        use strum::IntoEnumIterator;
+        assert_eq!(LanguageCode::iter().count(), LanguageCode::COUNT);
+        assert_eq!(
+            LanguageCode::codes().collect::<Vec<&'static str>>().len(),
+            LanguageCode::COUNT
+        );
+        assert_eq!(
+            LanguageCode::codes_t().collect::<Vec<&'static str>>().len(),
+            LanguageCode::COUNT
+        );
+        assert_eq!(
+            LanguageCode::codes_b().collect::<Vec<&'static str>>().len(),
+            LanguageCode::COUNT
+        );
+        assert_eq!(
+            LanguageCode::families()
+                .collect::<Vec<&'static str>>()
+                .len(),
+            26
+        );
+    }
 }
