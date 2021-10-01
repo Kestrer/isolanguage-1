@@ -695,6 +695,7 @@ mod tests {
         assert_eq!(LanguageCode::Sg.to_string(), "Sango");
     }
 
+    #[cfg(feature = "iterable")]
     mod iter {
         use crate::iter;
         use crate::LanguageCode;
