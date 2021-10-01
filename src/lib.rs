@@ -159,22 +159,6 @@ macro_rules! languages_table {
     }
 }
 
-#[cfg(feature = "iterable")]
-impl LanguageCode {
-    pub fn codes() -> iter::Codes {
-        iter::Codes::default()
-    }
-    pub fn codes_t() -> iter::CodesT {
-        iter::CodesT::default()
-    }
-    pub fn codes_b() -> iter::CodesB {
-        iter::CodesB::default()
-    }
-    pub fn families() -> iter::Families {
-        iter::Families::default()
-    }
-}
-
 languages_table!(
     LanguageCode,
     ParseError,
@@ -368,37 +352,11 @@ languages_table!(
 pub mod iter {
     use super::LanguageCode;
 
-    pub struct Codes(usize);
-    pub struct CodesT(usize);
-    pub struct CodesB(usize);
-    pub struct Families(usize);
+    #[derive(Debug, Default, Clone)]
+    pub struct Iter(usize);
 
-    impl Default for Codes {
-        fn default() -> Self {
-            Self(0)
-        }
-    }
-
-    impl Default for CodesT {
-        fn default() -> Self {
-            Self(0)
-        }
-    }
-
-    impl Default for CodesB {
-        fn default() -> Self {
-            Self(0)
-        }
-    }
-
-    impl Default for Families {
-        fn default() -> Self {
-            Self(0)
-        }
-    }
-
-    impl Iterator for Codes {
-        type Item = &'static str;
+    impl Iterator for Iter {
+        type Item = &'static LanguageCode;
 
         fn next(&mut self) -> Option<Self::Item> {
             if self.0 == CODES.len() {
@@ -406,7 +364,39 @@ pub mod iter {
             }
             let current = self.0;
             self.0 += 1;
-            Some(CODES[current].code())
+            Some(&CODES[current])
+        }
+    }
+
+    impl Iter {
+        pub fn as_codes(self) -> Codes {
+            Codes(self)
+        }
+        pub fn as_codes_t(self) -> CodesT {
+            CodesT(self)
+        }
+        pub fn as_codes_b(self) -> CodesB {
+            CodesB(self)
+        }
+    }
+
+    #[derive(Debug, Default, Clone)]
+    pub struct Codes(Iter);
+
+    #[derive(Debug, Default, Clone)]
+    pub struct CodesT(Iter);
+
+    #[derive(Debug, Default, Clone)]
+    pub struct CodesB(Iter);
+
+    #[derive(Debug, Default, Clone)]
+    pub struct Families(usize);
+
+    impl Iterator for Codes {
+        type Item = &'static str;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.0.next().map(|c| c.code())
         }
     }
 
@@ -414,12 +404,7 @@ pub mod iter {
         type Item = &'static str;
 
         fn next(&mut self) -> Option<Self::Item> {
-            if self.0 == CODES.len() {
-                return None;
-            }
-            let current = self.0;
-            self.0 += 1;
-            Some(CODES[current].code_t())
+            self.0.next().map(|c| c.code_t())
         }
     }
 
@@ -427,12 +412,7 @@ pub mod iter {
         type Item = &'static str;
 
         fn next(&mut self) -> Option<Self::Item> {
-            if self.0 == CODES.len() {
-                return None;
-            }
-            let current = self.0;
-            self.0 += 1;
-            Some(CODES[current].code_b())
+            self.0.next().map(|c| c.code_b())
         }
     }
 
@@ -448,6 +428,7 @@ pub mod iter {
             Some(FAMILIES[current])
         }
     }
+
     pub const CODES: [LanguageCode; 184] = [
         LanguageCode::Ab,
         LanguageCode::Aa,
@@ -715,32 +696,52 @@ mod tests {
     }
 
     mod iter {
-        use super::LanguageCode;
+        use crate::iter;
+        use crate::LanguageCode;
+
+        #[test]
+        fn language_codes() {
+            let mut codes = iter::Iter::default();
+            assert_eq!(codes.next(), Some(&LanguageCode::Ab));
+            assert_eq!(codes.next(), Some(&LanguageCode::Aa));
+        }
 
         #[test]
         fn all_codes() {
-            let mut codes = LanguageCode::codes();
+            let mut codes = iter::Codes::default();
+            assert_eq!(codes.next(), Some("ab"));
+            assert_eq!(codes.next(), Some("aa"));
+
+            let mut codes = iter::Iter::default().as_codes();
             assert_eq!(codes.next(), Some("ab"));
             assert_eq!(codes.next(), Some("aa"));
         }
 
         #[test]
         fn codes_t() {
-            let mut codes_t = LanguageCode::codes_t();
+            let mut codes_t = iter::CodesT::default();
+            assert_eq!(codes_t.next(), Some("abk"));
+            assert_eq!(codes_t.next(), Some("aar"));
+
+            let mut codes_t = iter::Iter::default().as_codes_t();
             assert_eq!(codes_t.next(), Some("abk"));
             assert_eq!(codes_t.next(), Some("aar"));
         }
 
         #[test]
         fn codes_b() {
-            let mut codes_b = LanguageCode::codes_b();
+            let mut codes_b = iter::CodesB::default();
+            assert_eq!(codes_b.next(), Some("abk"));
+            assert_eq!(codes_b.next(), Some("aar"));
+
+            let mut codes_b = iter::Iter::default().as_codes_b();
             assert_eq!(codes_b.next(), Some("abk"));
             assert_eq!(codes_b.next(), Some("aar"));
         }
 
         #[test]
         fn families() {
-            let mut families = LanguageCode::families();
+            let mut families = iter::Families::default();
             assert_eq!(families.next(), Some("Afro-Asiatic"));
             assert_eq!(families.next(), Some("Algonquian"));
         }
