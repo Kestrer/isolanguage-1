@@ -58,7 +58,7 @@ impl LanguageCode {
 pub struct Iter(usize);
 
 impl Iterator for Iter {
-    type Item = &'static LanguageCode;
+    type Item = LanguageCode;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 == LANGUAGE_CODES.len() {
@@ -66,7 +66,7 @@ impl Iterator for Iter {
         }
         let current = self.0;
         self.0 += 1;
-        Some(&LANGUAGE_CODES[current])
+        Some(LANGUAGE_CODES[current])
     }
 }
 
@@ -80,7 +80,7 @@ impl Iter {
     /// use isolanguage_1::{LanguageCode, Iter};
     ///
     /// let mut iter = Iter::default();
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Ab)); // first entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
     ///
     /// let mut codes = iter.into_codes();
     /// assert_eq!(codes.next(), Some("aa")); // second entry, since we previously iterated once
@@ -96,8 +96,8 @@ impl Iter {
     /// use isolanguage_1::{LanguageCode, Iter};
     ///
     /// let mut iter = Iter::default();
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Ab)); // first entry
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Aa)); // second entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
     ///
     /// let mut codes = iter.into_codes_t();
     /// assert_eq!(codes.next(), Some("afr")); // third entry, since we previously iterated twice
@@ -113,9 +113,9 @@ impl Iter {
     /// use isolanguage_1::{LanguageCode, Iter};
     ///
     /// let mut iter = Iter::default();
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Ab)); // first entry
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Aa)); // second entry
-    /// assert_eq!(iter.next(), Some(&LanguageCode::Af)); // third entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Af)); // third entry
     ///
     /// let mut codes = iter.into_codes_b();
     /// assert_eq!(codes.next(), Some("aka")); // fourth entry, since we previously iterated thrice
@@ -404,8 +404,8 @@ mod tests {
     #[test]
     fn language_codes() {
         let mut codes = iter::Iter::default();
-        assert_eq!(codes.next(), Some(&LanguageCode::Ab));
-        assert_eq!(codes.next(), Some(&LanguageCode::Aa));
+        assert_eq!(codes.next(), Some(LanguageCode::Ab));
+        assert_eq!(codes.next(), Some(LanguageCode::Aa));
     }
 
     #[test]
