@@ -18,14 +18,11 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 macro_rules! languages_table {
-    (
-        $enum_name:ident, $enum_err_name:ident,
-        $(($variant:ident, $code:literal, $code_t:literal, $code_b:literal, $name:literal, $family:literal),)+
-    ) => {
+    ($(($variant:ident, $code:literal, $code_t:literal, $code_b:literal, $name:literal, $family:literal),)+) => {
         /// An enumeration of all ISO 639-1 language codes.
         #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-        pub enum $enum_name {
+        pub enum LanguageCode {
             $(
                 #[doc=$name]
                 #[cfg_attr(feature = "serde", serde(rename=$code))]
@@ -33,7 +30,7 @@ macro_rules! languages_table {
             )+
         }
 
-        impl $enum_name {
+        impl LanguageCode {
             /// Returns the 2 letter code of the language.
             ///
             /// # Examples
@@ -117,21 +114,21 @@ macro_rules! languages_table {
         }
 
         impl TryFrom<&str> for LanguageCode {
-            type Error = $enum_err_name;
+            type Error = ParseError;
 
             /// Tries to convert from a two letter language code.
             fn try_from(s: &str) -> Result<Self, Self::Error> {
                 match s {
                     $($code => Ok(Self::$variant),)+
-                    _ => Err($enum_err_name {
+                    _ => Err(ParseError {
                         language: s.to_owned(),
                     }),
                 }
             }
         }
 
-        impl FromStr for $enum_name {
-            type Err = $enum_err_name;
+        impl FromStr for LanguageCode {
+            type Err = ParseError;
 
             /// Calls TryFrom.
             #[inline]
@@ -140,23 +137,10 @@ macro_rules! languages_table {
             }
         }
 
-        impl Display for $enum_name {
+        impl Display for LanguageCode {
             /// Writes the ISO language name.
             fn fmt(&self, f: &mut Formatter) -> fmt::Result {
                 f.write_str(self.name())
-            }
-        }
-
-        /// An error parsing a language from its two letter language code.
-        #[derive(Debug, Clone)]
-        pub struct $enum_err_name {
-            /// The language that could not be parsed.
-            pub language: String,
-        }
-
-        impl Display for $enum_err_name {
-            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-                write!(f, "{} is not a valid ISO 639-1 2 letter language code", self.language)
             }
         }
 
@@ -165,9 +149,7 @@ macro_rules! languages_table {
     }
 }
 
-languages_table!(
-    LanguageCode,
-    ParseError,
+languages_table! {
     (Ab, "ab", "abk", "abk", "Abkhazian", "Northwest Caucasian"),
     (Aa, "aa", "aar", "aar", "Afar", "Afro-Asiatic"),
     (Af, "af", "afr", "afr", "Afrikaans", "Indo-European"),
@@ -352,7 +334,7 @@ languages_table!(
     (Yo, "yo", "yor", "yor", "Yoruba", "Niger–Congo"),
     (Za, "za", "zha", "zha", "Zhuang", "Tai–Kadai"),
     (Zu, "zu", "zul", "zul", "Zulu", "Niger–Congo"),
-);
+}
 
 impl LanguageCode {
     /// Returns an iterator over every ISO 639-1 language code.
@@ -535,6 +517,23 @@ static_array_iterators! {
 
     /// An iterator over all language families, created by [`LanguageCode::families`].
     Families(FAMILIES) -> &'static str,
+}
+
+/// An error parsing a language from its two letter language code.
+#[derive(Debug, Clone)]
+pub struct ParseError {
+    /// The language that could not be parsed.
+    pub language: String,
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{} is not a valid ISO 639-1 2 letter language code",
+            self.language
+        )
+    }
 }
 
 #[cfg(test)]
