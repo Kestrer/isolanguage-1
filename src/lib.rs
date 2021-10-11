@@ -134,6 +134,7 @@ macro_rules! languages_table {
             type Err = $enum_err_name;
 
             /// Calls TryFrom.
+            #[inline]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 Self::try_from(s)
             }
@@ -363,6 +364,7 @@ impl LanguageCode {
     ///
     /// assert!(LanguageCode::iter().find(|&code| code == LanguageCode::Wo).is_some());
     /// ```
+    #[inline]
     pub fn iter() -> Iter {
         Iter::default()
     }
@@ -376,6 +378,7 @@ impl LanguageCode {
     ///
     /// assert!(LanguageCode::codes().find(|code| *code == "en").is_some());
     /// ```
+    #[inline]
     pub fn codes() -> Codes {
         Codes::default()
     }
@@ -389,6 +392,7 @@ impl LanguageCode {
     ///
     /// assert!(LanguageCode::codes_t().find(|code| *code == "ave").is_some());
     /// ```
+    #[inline]
     pub fn codes_t() -> CodesT {
         CodesT::default()
     }
@@ -402,6 +406,7 @@ impl LanguageCode {
     ///
     /// assert!(LanguageCode::codes_b().find(|code| *code == "chi").is_some());
     /// ```
+    #[inline]
     pub fn codes_b() -> CodesB {
         CodesB::default()
     }
@@ -415,6 +420,7 @@ impl LanguageCode {
     ///
     /// assert!(LanguageCode::families().find(|family| *family == "Algonquian").is_some());
     /// ```
+    #[inline]
     pub fn families() -> Families {
         Families::default()
     }
@@ -457,6 +463,7 @@ macro_rules! static_array_iterators {
         pub struct $name(Range<u32>);
 
         impl Default for $name {
+            #[inline]
             fn default() -> Self {
                 Self(0..$array.len() as u32)
             }
@@ -465,38 +472,46 @@ macro_rules! static_array_iterators {
         impl Iterator for $name {
             type Item = $item;
 
+            #[inline]
             fn next(&mut self) -> Option<Self::Item> {
                 self.0.next().map(|i| $array[i as usize])$(.map($($mapper)*))?
             }
 
+            #[inline]
             fn nth(&mut self, n: usize) -> Option<Self::Item> {
                 self.0.nth(n).map(|i| $array[i as usize])$(.map($($mapper)*))?
             }
 
+            #[inline]
             fn last(mut self) -> Option<Self::Item> {
                 self.next_back()
             }
 
+            #[inline]
             fn size_hint(&self) -> (usize, Option<usize>) {
                 self.0.size_hint()
             }
 
+            #[inline]
             fn count(self) -> usize {
                 self.len()
             }
         }
 
         impl DoubleEndedIterator for $name {
+            #[inline]
             fn next_back(&mut self) -> Option<Self::Item> {
                 self.0.next_back().map(|i| $array[i as usize])$(.map($($mapper)*))?
             }
 
+            #[inline]
             fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
                 self.0.nth_back(n).map(|i| $array[i as usize])$(.map($($mapper)*))?
             }
         }
 
         impl ExactSizeIterator for $name {
+            #[inline]
             fn len(&self) -> usize {
                 self.0.len()
             }
