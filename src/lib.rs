@@ -15,11 +15,6 @@ use std::str::FromStr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "iterable")]
-mod iter;
-#[cfg(feature = "iterable")]
-pub use iter::*;
-
 macro_rules! languages_table {
     (
         $enum_name:ident, $enum_err_name:ident,
@@ -161,6 +156,9 @@ macro_rules! languages_table {
                 write!(f, "{} is not a valid ISO 639-1 2 letter language code", self.language)
             }
         }
+
+        /// An array of every ISO 639-1 language code.
+        pub const LANGUAGE_CODES: [LanguageCode; 184] = [$(LanguageCode::$variant,)*];
     }
 }
 
@@ -353,12 +351,229 @@ languages_table!(
     (Zu, "zu", "zul", "zul", "Zulu", "Niger–Congo"),
 );
 
+impl LanguageCode {
+    /// Returns an iterator over all ISO 639-1 country codes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::LanguageCode;
+    ///
+    /// assert!(LanguageCodes::iter().find(|code| code == LanguageCode::Wo).is_some());
+    /// ```
+    pub fn iter() -> Iter {
+        Iter::default()
+    }
+
+    /// Returns an iterator over all 2-letter country codes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::LanguageCode;
+    ///
+    /// assert!(LanguageCode::codes().find(|code| *code == "en").is_some());
+    /// ```
+    pub fn codes() -> Codes {
+        Codes::default()
+    }
+
+    /// Returns an iterator over all 3 letter ISO 639-2 T codes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::LanguageCode;
+    ///
+    /// assert!(LanguageCode::codes_t().find(|code| *code == "ave").is_some());
+    /// ```
+    pub fn codes_t() -> CodesT {
+        CodesT::default()
+    }
+
+    /// Returns an iterator over all 3 letter ISO 639-2 B codes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::LanguageCode;
+    ///
+    /// assert!(LanguageCode::codes_b().find(|code| *code == "chi").is_some());
+    /// ```
+    pub fn codes_b() -> CodesB {
+        CodesB::default()
+    }
+
+    /// Returns an iterator over all language families.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::LanguageCode;
+    ///
+    /// assert!(LanguageCode::families().find(|family| *family == "Algonquian").is_some());
+    /// ```
+    pub fn families() -> Families {
+        Families::default()
+    }
+}
+
+/// An iterator over all [`LanguageCode`](crate::LanguageCode).
+#[derive(Debug, Default, Clone)]
+pub struct Iter(usize);
+
+impl Iterator for Iter {
+    type Item = LanguageCode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let language_code = *LANGUAGE_CODES.get(self.0)?;
+        self.0 += 1;
+        Some(language_code)
+    }
+}
+
+impl Iter {
+    /// Consumes [`Iter`](Iter) into [`Codes`](Codes).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::{LanguageCode, Iter};
+    ///
+    /// let mut iter = LanguageCode::iter();
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
+    ///
+    /// let mut codes = iter.into_codes();
+    /// assert_eq!(codes.next(), Some("aa")); // second entry, since we previously iterated once
+    /// ```
+    pub fn into_codes(self) -> Codes {
+        Codes(self)
+    }
+
+    /// Consumes [`Iter`](Iter) into [`CodesT`](CodesT).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::{LanguageCode, Iter};
+    ///
+    /// let mut iter = LanguageCode::iter();
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
+    ///
+    /// let mut codes = iter.into_codes_t();
+    /// assert_eq!(codes.next(), Some("afr")); // third entry, since we previously iterated twice
+    /// ```
+    pub fn into_codes_t(self) -> CodesT {
+        CodesT(self)
+    }
+
+    /// Consumes [`Iter`](Iter) into [`CodesB`](CodesB).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use isolanguage_1::{LanguageCode, Iter};
+    ///
+    /// let mut iter = LanguageCode::iter();
+    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
+    /// assert_eq!(iter.next(), Some(LanguageCode::Af)); // third entry
+    ///
+    /// let mut codes = iter.into_codes_b();
+    /// assert_eq!(codes.next(), Some("aka")); // fourth entry, since we previously iterated thrice
+    /// ```
+    pub fn into_codes_b(self) -> CodesB {
+        CodesB(self)
+    }
+}
+
+/// An iterator over all 2 letter codes.
+#[derive(Debug, Default, Clone)]
+pub struct Codes(Iter);
+
+impl Iterator for Codes {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|c| c.code())
+    }
+}
+
+/// An iterator over all 3 letter ISO 639-2 T codes.
+#[derive(Debug, Default, Clone)]
+pub struct CodesT(Iter);
+
+impl Iterator for CodesT {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|c| c.code_t())
+    }
+}
+
+/// An iterator over all 3 letter ISO 639-2 B codes.
+#[derive(Debug, Default, Clone)]
+pub struct CodesB(Iter);
+
+impl Iterator for CodesB {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|c| c.code_b())
+    }
+}
+
+/// All language families, sorted by alphabetical order.
+pub const FAMILIES: [&str; 26] = [
+    "Afro-Asiatic",
+    "Algonquian",
+    "Austroasiatic",
+    "Austronesian",
+    "Aymaran",
+    "Constructed",
+    "Creole",
+    "Dené–Yeniseian",
+    "Dravidian",
+    "Eskimo–Aleut",
+    "Indo-European",
+    "Japonic",
+    "Kartvelian",
+    "Koreanic",
+    "Language isolate",
+    "Mongolic",
+    "Niger–Congo",
+    "Nilo-Saharan",
+    "Northeast Caucasian",
+    "Northwest Caucasian",
+    "Quechuan",
+    "Sino-Tibetan",
+    "Tai–Kadai",
+    "Tupian",
+    "Turkic",
+    "Uralic",
+];
+
+/// An iterator over all language families.
+#[derive(Debug, Default, Clone)]
+pub struct Families(u32);
+
+impl Iterator for Families {
+    type Item = &'static str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let family = FAMILIES.get(self.0 as usize)?;
+        self.0 += 1;
+        Some(family)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::LanguageCode;
+    use crate::{Families, LanguageCode};
 
     #[test]
-    fn codes() {
+    fn code_strings() {
         assert_eq!(LanguageCode::Ae.code(), "ae");
         assert_eq!(LanguageCode::Ae.code_t(), "ave");
         assert_eq!(LanguageCode::Ae.code_b(), "ave");
@@ -400,5 +615,54 @@ mod tests {
         assert_eq!(LanguageCode::Ae.to_string(), "Avestan");
         assert_eq!(LanguageCode::Zh.to_string(), "Chinese");
         assert_eq!(LanguageCode::Sg.to_string(), "Sango");
+    }
+
+    #[test]
+    fn language_codes() {
+        let mut codes = LanguageCode::iter();
+        assert_eq!(codes.next(), Some(LanguageCode::Ab));
+        assert_eq!(codes.next(), Some(LanguageCode::Aa));
+    }
+
+    #[test]
+    fn codes() {
+        let mut codes = LanguageCode::codes();
+        assert_eq!(codes.next(), Some("ab"));
+        assert_eq!(codes.next(), Some("aa"));
+
+        let mut codes = LanguageCode::iter().into_codes();
+        assert_eq!(codes.next(), Some("ab"));
+        assert_eq!(codes.next(), Some("aa"));
+    }
+
+    #[test]
+    fn codes_t() {
+        let mut codes_t = LanguageCode::codes_t();
+        assert_eq!(codes_t.next(), Some("abk"));
+        assert_eq!(codes_t.next(), Some("aar"));
+
+        let mut codes_t = LanguageCode::iter().into_codes_t();
+        assert_eq!(codes_t.next(), Some("abk"));
+        assert_eq!(codes_t.next(), Some("aar"));
+    }
+
+    #[test]
+    fn codes_b() {
+        let mut codes_b = LanguageCode::codes_b();
+        assert_eq!(codes_b.next(), Some("abk"));
+        assert_eq!(codes_b.next(), Some("aar"));
+
+        let mut codes_b = LanguageCode::iter().into_codes_b();
+        assert_eq!(codes_b.next(), Some("abk"));
+        assert_eq!(codes_b.next(), Some("aar"));
+    }
+
+    #[test]
+    fn families() {
+        let mut families = Families::default();
+        assert_eq!(families.next(), Some("Afro-Asiatic"));
+        assert_eq!(families.next(), Some("Algonquian"));
+        assert_eq!(families.by_ref().count(), 24);
+        assert_eq!(families.next(), None);
     }
 }
