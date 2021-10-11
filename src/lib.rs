@@ -15,6 +15,11 @@ use std::str::FromStr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "iterable")]
+mod iter;
+#[cfg(feature = "iterable")]
+pub use iter::*;
+
 macro_rules! languages_table {
     (
         $enum_name:ident, $enum_err_name:ident,
