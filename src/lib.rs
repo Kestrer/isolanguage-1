@@ -488,40 +488,26 @@ impl Iter {
     }
 }
 
-/// An iterator over all 2 letter codes.
-#[derive(Debug, Default, Clone)]
-pub struct Codes(Iter);
+macro_rules! mapped_iterator {
+    ($(#[doc = $desc:literal] $name:ident $inner:ident,)*) => { $(
+        #[doc = concat!("An iterator over all", $desc, ".")]
+        #[derive(Debug, Default, Clone)]
+        pub struct $name(Iter);
 
-impl Iterator for Codes {
-    type Item = &'static str;
+        impl Iterator for $name {
+            type Item = &'static str;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|c| c.code())
-    }
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.next().map(LanguageCode::$inner)
+            }
+        }
+    )* }
 }
 
-/// An iterator over all 3 letter ISO 639-2 T codes.
-#[derive(Debug, Default, Clone)]
-pub struct CodesT(Iter);
-
-impl Iterator for CodesT {
-    type Item = &'static str;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|c| c.code_t())
-    }
-}
-
-/// An iterator over all 3 letter ISO 639-2 B codes.
-#[derive(Debug, Default, Clone)]
-pub struct CodesB(Iter);
-
-impl Iterator for CodesB {
-    type Item = &'static str;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|c| c.code_b())
-    }
+mapped_iterator! {
+    /** 2 letter codes */ Codes code,
+    /** ISO 639-2 T codes */ CodesT code_t,
+    /** ISO 639-2 B codes */ CodesB code_b,
 }
 
 /// All language families, sorted by alphabetical order.
