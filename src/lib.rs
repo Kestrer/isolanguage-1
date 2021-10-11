@@ -5,11 +5,13 @@
 //! isolanguage-1 = { version = "0.2.1", features = ["serde"] }
 //! ```
 //!
-//! The main type is the `LanguageCode` type, which is an enum for every single country in ISO
+//! The main type is the `LanguageCode` type, which is an enum for every single language in ISO
 //! 639-1. It optionally implements Serialize and Deserialize too.
 
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
+use std::iter::FusedIterator;
+use std::ops::Range;
 use std::str::FromStr;
 
 #[cfg(feature = "serde")]
@@ -352,20 +354,20 @@ languages_table!(
 );
 
 impl LanguageCode {
-    /// Returns an iterator over all ISO 639-1 country codes.
+    /// Returns an iterator over every ISO 639-1 language code.
     ///
     /// # Example
     ///
     /// ```
     /// use isolanguage_1::LanguageCode;
     ///
-    /// assert!(LanguageCodes::iter().find(|code| code == LanguageCode::Wo).is_some());
+    /// assert!(LanguageCode::iter().find(|&code| code == LanguageCode::Wo).is_some());
     /// ```
     pub fn iter() -> Iter {
         Iter::default()
     }
 
-    /// Returns an iterator over all 2-letter country codes.
+    /// Returns an iterator over all 2-letter language codes.
     ///
     /// # Example
     ///
@@ -418,98 +420,6 @@ impl LanguageCode {
     }
 }
 
-/// An iterator over all [`LanguageCode`](crate::LanguageCode).
-#[derive(Debug, Default, Clone)]
-pub struct Iter(usize);
-
-impl Iterator for Iter {
-    type Item = LanguageCode;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let language_code = *LANGUAGE_CODES.get(self.0)?;
-        self.0 += 1;
-        Some(language_code)
-    }
-}
-
-impl Iter {
-    /// Consumes [`Iter`](Iter) into [`Codes`](Codes).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use isolanguage_1::{LanguageCode, Iter};
-    ///
-    /// let mut iter = LanguageCode::iter();
-    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
-    ///
-    /// let mut codes = iter.into_codes();
-    /// assert_eq!(codes.next(), Some("aa")); // second entry, since we previously iterated once
-    /// ```
-    pub fn into_codes(self) -> Codes {
-        Codes(self)
-    }
-
-    /// Consumes [`Iter`](Iter) into [`CodesT`](CodesT).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use isolanguage_1::{LanguageCode, Iter};
-    ///
-    /// let mut iter = LanguageCode::iter();
-    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
-    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
-    ///
-    /// let mut codes = iter.into_codes_t();
-    /// assert_eq!(codes.next(), Some("afr")); // third entry, since we previously iterated twice
-    /// ```
-    pub fn into_codes_t(self) -> CodesT {
-        CodesT(self)
-    }
-
-    /// Consumes [`Iter`](Iter) into [`CodesB`](CodesB).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use isolanguage_1::{LanguageCode, Iter};
-    ///
-    /// let mut iter = LanguageCode::iter();
-    /// assert_eq!(iter.next(), Some(LanguageCode::Ab)); // first entry
-    /// assert_eq!(iter.next(), Some(LanguageCode::Aa)); // second entry
-    /// assert_eq!(iter.next(), Some(LanguageCode::Af)); // third entry
-    ///
-    /// let mut codes = iter.into_codes_b();
-    /// assert_eq!(codes.next(), Some("aka")); // fourth entry, since we previously iterated thrice
-    /// ```
-    pub fn into_codes_b(self) -> CodesB {
-        CodesB(self)
-    }
-}
-
-macro_rules! mapped_iterator {
-    ($(#[doc = $desc:literal] $name:ident $inner:ident,)*) => { $(
-        #[doc = concat!("An iterator over all", $desc, ".")]
-        #[derive(Debug, Default, Clone)]
-        pub struct $name(Iter);
-
-        impl Iterator for $name {
-            type Item = &'static str;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                self.0.next().map(LanguageCode::$inner)
-            }
-        }
-    )* }
-}
-
-mapped_iterator! {
-    /** 2 letter codes */ Codes code,
-    /** ISO 639-2 T codes */ CodesT code_t,
-    /** ISO 639-2 B codes */ CodesB code_b,
-}
-
 /// All language families, sorted by alphabetical order.
 pub const FAMILIES: [&str; 26] = [
     "Afro-Asiatic",
@@ -540,18 +450,76 @@ pub const FAMILIES: [&str; 26] = [
     "Uralic",
 ];
 
-/// An iterator over all language families.
-#[derive(Debug, Default, Clone)]
-pub struct Families(u32);
+macro_rules! static_array_iterators {
+    ($($(#[doc = $doc:literal])* $name:ident($array:ident) -> $item:ty $({ $($mapper:tt)* })?,)*) => { $(
+        $(#[doc = $doc])*
+        #[derive(Debug, Clone)]
+        pub struct $name(Range<u32>);
 
-impl Iterator for Families {
-    type Item = &'static str;
+        impl Default for $name {
+            fn default() -> Self {
+                Self(0..$array.len() as u32)
+            }
+        }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let family = FAMILIES.get(self.0 as usize)?;
-        self.0 += 1;
-        Some(family)
-    }
+        impl Iterator for $name {
+            type Item = $item;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.next().map(|i| $array[i as usize])$(.map($($mapper)*))?
+            }
+
+            fn nth(&mut self, n: usize) -> Option<Self::Item> {
+                self.0.nth(n).map(|i| $array[i as usize])$(.map($($mapper)*))?
+            }
+
+            fn last(mut self) -> Option<Self::Item> {
+                self.next_back()
+            }
+
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                self.0.size_hint()
+            }
+
+            fn count(self) -> usize {
+                self.len()
+            }
+        }
+
+        impl DoubleEndedIterator for $name {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                self.0.next_back().map(|i| $array[i as usize])$(.map($($mapper)*))?
+            }
+
+            fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+                self.0.nth_back(n).map(|i| $array[i as usize])$(.map($($mapper)*))?
+            }
+        }
+
+        impl ExactSizeIterator for $name {
+            fn len(&self) -> usize {
+                self.0.len()
+            }
+        }
+
+        impl FusedIterator for $name {}
+    )* }
+}
+static_array_iterators! {
+    /// An iterator over every [`LanguageCode`], created by [`LanguageCode::iter`].
+    Iter(LANGUAGE_CODES) -> LanguageCode,
+
+    /// An iterator over every 2-letter language code, created by [`LanguageCode::codes`]
+    Codes(LANGUAGE_CODES) -> &'static str { LanguageCode::code },
+
+    /// An iterator over ISO 639-2 T codes, created by [`LanguageCode::codes_t`].
+    CodesT(LANGUAGE_CODES) -> &'static str { LanguageCode::code_t },
+
+    /// An iterator over ISO 639-2 B codes, created by [`LanguageCode::codes_b`].
+    CodesB(LANGUAGE_CODES) -> &'static str { LanguageCode::code_b },
+
+    /// An iterator over all language families, created by [`LanguageCode::families`].
+    Families(FAMILIES) -> &'static str,
 }
 
 #[cfg(test)]
@@ -615,10 +583,6 @@ mod tests {
         let mut codes = LanguageCode::codes();
         assert_eq!(codes.next(), Some("ab"));
         assert_eq!(codes.next(), Some("aa"));
-
-        let mut codes = LanguageCode::iter().into_codes();
-        assert_eq!(codes.next(), Some("ab"));
-        assert_eq!(codes.next(), Some("aa"));
     }
 
     #[test]
@@ -626,19 +590,11 @@ mod tests {
         let mut codes_t = LanguageCode::codes_t();
         assert_eq!(codes_t.next(), Some("abk"));
         assert_eq!(codes_t.next(), Some("aar"));
-
-        let mut codes_t = LanguageCode::iter().into_codes_t();
-        assert_eq!(codes_t.next(), Some("abk"));
-        assert_eq!(codes_t.next(), Some("aar"));
     }
 
     #[test]
     fn codes_b() {
         let mut codes_b = LanguageCode::codes_b();
-        assert_eq!(codes_b.next(), Some("abk"));
-        assert_eq!(codes_b.next(), Some("aar"));
-
-        let mut codes_b = LanguageCode::iter().into_codes_b();
         assert_eq!(codes_b.next(), Some("abk"));
         assert_eq!(codes_b.next(), Some("aar"));
     }
