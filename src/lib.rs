@@ -2,7 +2,7 @@
 //! It also has optional Serde support, by using the `serde` feature:
 //!
 //! ```toml
-//! isolanguage-1 = { version = "0.2.1", features = ["serde"] }
+//! isolanguage-1 = { version = "0.2.2", features = ["serde"] }
 //! ```
 //!
 //! The main type is the `LanguageCode` type, which is an enum for every single language in ISO
