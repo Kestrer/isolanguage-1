@@ -8,7 +8,7 @@ version = "0.2.2"
 readme = "README.md"
 repository = "https://github.com/Kestrer/isolanguage-1"
 authors = ["Kestrer <kestrer.dev@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.120", features = ["derive"], optional = true }
